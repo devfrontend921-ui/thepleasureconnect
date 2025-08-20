@@ -1,49 +1,41 @@
+// types.ts
+export interface User {
+  id: string;
+  email: string;
+}
+
 export interface Client {
-  id: number;
+  id: string;
   name: string;
-  address: string;
-  phone: string;
-  install_date: string;
-  monthly_fee: number;
-  status: 'active' | 'inactive';
-  created_at: string;
+  email?: string;
+  phone?: string;
+  address?: string;
 }
 
 export interface Payment {
   id: string;
   client_id: string;
+  user_id?: string;
   amount: number;
   description: string;
   due_date: string;
   status: 'pending' | 'paid' | 'overdue';
   payment_method?: string;
   created_at: string;
-  client?: {
-    id: string;
-    name: string;
-    email: string;
-  };
+  updated_at?: string;
+  client?: Client;
 }
 
-export interface AuditLog {
-  id: number;
-  table_name: string;
-  record_id: number;
-  action: 'INSERT' | 'UPDATE' | 'DELETE';
-  old_values: any;
-  new_values: any;
-  changed_at: string;
+export interface PaymentStatusData {
+  name: string;
+  value: number;
+  color: string;
 }
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  created_at: string;
-  role: 'admin' | 'visor';
-}
-
-export interface NewUser {
-  email: string;
-  password: string;
-  role: 'admin' | 'visor';
+export interface ClientMonthlyData {
+  month: string;
+  client: string;
+  paidOnTime: number;
+  paidLate: number;
+  overdue: number;
 }

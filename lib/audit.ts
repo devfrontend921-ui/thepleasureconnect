@@ -1,13 +1,23 @@
-// lib/audit.ts
-import { createClient } from './supabase/server';
+import { createClient } from '@/lib/supabase/server';
+
+interface AuditLog {
+  id: string;
+  user_id: string;
+  table_name: string;
+  record_id: string;
+  action: string;
+  old_data?: Record<string, unknown>;
+  new_data?: Record<string, unknown>;
+  created_at: string;
+}
 
 export async function logAudit(
   userId: string,
   tableName: string,
   recordId: string,
   action: 'INSERT' | 'UPDATE' | 'DELETE',
-  oldData?: any,
-  newData?: any
+  oldData?: Record<string, unknown>,
+  newData?: Record<string, unknown>
 ) {
   const supabase = await createClient();
   

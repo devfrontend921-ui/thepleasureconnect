@@ -4,6 +4,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
+import { User, Client, Payment } from '@/types';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,9 +16,9 @@ export default function EditPaymentPage() {
   const params = useParams();
   const paymentId = params.id as string;
   
-  const [user, setUser] = useState<any>(null);
-  const [payment, setPayment] = useState<any>(null);
-  const [clients, setClients] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [payment, setPayment] = useState<Payment | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +52,11 @@ export default function EditPaymentPage() {
         }
         
         console.log("Usuario autenticado:", user);
-        setUser(user);
+        setUser({
+          id: user.id,
+          email: user.email ?? '', // Ensure email is always a string
+          // Add other fields as required by your local User type
+        });
         setAuthChecked(true);
         
         // Cargar datos iniciales
@@ -211,7 +216,7 @@ export default function EditPaymentPage() {
         if (userIdCheck && userIdCheck.length > 0 && userIdCheck[0].user_id !== null) {
           paymentData.user_id = user.id;
         }
-      } catch (err) {
+      } catch {
         console.warn("No se pudo verificar la columna user_id, intentando sin user_id");
       }
       
@@ -268,15 +273,8 @@ export default function EditPaymentPage() {
   };
 
   // Función para formatear el ID
-  const formatId = (id: any) => {
-    const idString = String(id);
-    return idString.substring(0, 8) + '...';
-  };
-
-  // Función para obtener el nombre del cliente
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId);
-    return client ? client.name : `Cliente no encontrado (${formatId(clientId)})`;
+  const formatId = (id: string): string => {
+    return id.substring(0, 8) + '...';
   };
 
   // Estados de carga

@@ -17,6 +17,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import { User, Client, Payment, PaymentStatusData, ClientMonthlyData } from '@/types';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,16 +26,16 @@ const supabase = createBrowserClient(
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   
   // Datos para las gráficas
-  const [paymentStatusData, setPaymentStatusData] = useState<any[]>([]);
-  const [clientMonthlyData, setClientMonthlyData] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const [paymentStatusData, setPaymentStatusData] = useState<PaymentStatusData[]>([]);
+  const [clientMonthlyData, setClientMonthlyData] = useState<ClientMonthlyData[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -142,7 +143,7 @@ export default function DashboardPage() {
         }
       });
       
-      const statusData = [
+      const statusData: PaymentStatusData[] = [
         { name: 'Pagados', value: statusCounts.paid, color: '#10B981' },
         { name: 'Pendientes', value: statusCounts.pending, color: '#FBBF24' },
         { name: 'Vencidos', value: statusCounts.overdue, color: '#EF4444' },
@@ -151,7 +152,7 @@ export default function DashboardPage() {
       setPaymentStatusData(statusData);
       
       // Obtener datos para la gráfica mensual por cliente (últimos 6 meses)
-      const monthlyData: any[] = [];
+      const monthlyData: ClientMonthlyData[] = [];
       const currentDate = new Date();
       
       // Generar los últimos 6 meses
@@ -206,7 +207,7 @@ export default function DashboardPage() {
   };
 
   // Función para formatear el nombre del mes
-  const formatMonth = (monthYear: string) => {
+  const formatMonth = (monthYear: string): string => {
     const [year, month] = monthYear.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return date.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' });
@@ -300,7 +301,7 @@ export default function DashboardPage() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => [`${value} pagos`, 'Cantidad']} />
+                  <Tooltip formatter={(value) => [`${value}`, 'Cantidad']} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>

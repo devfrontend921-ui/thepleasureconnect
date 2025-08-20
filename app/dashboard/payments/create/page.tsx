@@ -1,10 +1,10 @@
-// app/dashboard/payments/create/page.tsx
 "use client";
 import { useEffect, useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr'; // Cambiamos a @supabase/ssr
+import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { User, Client } from '@/types';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,8 +13,8 @@ const supabase = createBrowserClient(
 
 export default function CreatePaymentPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,23 +37,29 @@ export default function CreatePaymentPage() {
         const { data: { user }, error } = await supabase.auth.getUser();
         
         if (error) {
-          console.error("Error al obtener usuario:", error);
+          console.error("Error de autenticación:", error);
           throw error;
         }
         
         if (!user) {
-          console.log("No hay usuario activo, redirigiendo a login");
+          console.log("No hay usuario, redirigiendo a login");
           router.push('/auth/login');
           return;
         }
         
-        console.log("Usuario encontrado:", user);
-        setUser(user);
+        console.log("Usuario autenticado:", user);
+        // Map Supabase user to local User type
+        setUser({
+          id: user.id,
+          email: user.email ?? '', // fallback to empty string if undefined
+          // Add other fields as required by your local User type
+        });
         setAuthChecked(true);
+        
+        // Cargar datos iniciales
         fetchClients();
       } catch (err) {
-        console.error('Error checking auth:', err);
-        setError('Error de autenticación. Por favor inicia sesión nuevamente.');
+        console.error('Error en autenticación:', err);
         router.push('/auth/login');
       }
     };
@@ -61,39 +67,20 @@ export default function CreatePaymentPage() {
     checkAuth();
   }, [router]);
 
-  // ... resto del código igual que antes ...
-
   const fetchClients = async () => {
     try {
-      setLoading(true);
-      
       console.log("Obteniendo clientes...");
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, name')
-        .order('name');
+      const { data, error } = await supabase.from('clients').select('id, name').order('name');
       
       if (error) {
-        console.error("Error de Supabase:", error);
+        console.error("Error al obtener clientes:", error);
         throw error;
       }
       
       console.log("Clientes obtenidos:", data);
-      
-      if (!data || data.length === 0) {
-        setClients([]);
-        return;
-      }
-      
-      const mappedClients = data.map(client => ({
-        id: client.id,
-        name: client.name
-        
-      }));
-      
-      setClients(mappedClients);
+      setClients(data || []);
     } catch (err) {
-      console.error('Error fetching clients:', err);
+      console.error('Error al cargar clientes:', err);
       setError('Error al cargar los clientes');
     } finally {
       setLoading(false);
@@ -109,116 +96,116 @@ export default function CreatePaymentPage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  try {
-    setSaving(true);
-    setError(null);
+    e.preventDefault();
     
-    // Verificar nuevamente la sesión antes de enviar
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      throw new Error("Sesión no válida. Por favor inicia sesión nuevamente.");
-    }
-    
-    console.log("Enviando formulario:", formData);
-    console.log("Usuario actual:", user);
-    
-    // Validar que el client_id no esté vacío
-    if (!formData.client_id) {
-      throw new Error("Debes seleccionar un cliente");
-    }
-    
-    // Validar que el amount sea un número válido
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      throw new Error("El monto debe ser un número positivo");
-    }
-    
-    // Validar que la fecha no esté vacía
-    if (!formData.due_date) {
-      throw new Error("La fecha de vencimiento es obligatoria");
-    }
-    
-    // Preparar los datos del pago
-    const paymentData: any = {
-      client_id: formData.client_id,
-      amount: amount,
-      description: formData.description,
-      due_date: formData.due_date,
-      status: formData.status,
-      payment_method: formData.payment_method || null
-    };
-    
-    // Agregar user_id solo si existe la columna
-    // Esto evita errores si la columna no existe
     try {
-      // Intentar obtener la información de la tabla para verificar si tiene user_id
-      const { data: tableInfo, error: tableError } = await supabase
-        .from('payments')
-        .select('id')
-        .limit(1);
+      setSaving(true);
+      setError(null);
       
-      if (!tableError) {
-        // Si la consulta funciona, asumimos que la tabla existe
-        // Agregamos user_id a los datos
-        paymentData.user_id = user.id;
+      // Verificar nuevamente la sesión antes de enviar
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error("Sesión no válida. Por favor inicia sesión nuevamente.");
       }
-    } catch (err) {
-      console.warn("No se pudo verificar la estructura de la tabla, intentando sin user_id");
-    }
-    
-    console.log("Datos a enviar:", paymentData);
-    
-    // Intentar insertar el pago
-    const { data, error } = await supabase
-      .from('payments')
-      .insert([paymentData])
-      .select();
-
-    if (error) {
-      console.error("Error al crear pago:", error);
       
-      // Si el error es por la columna user_id, intentar sin ella
-      if (error.message.includes('user_id') || error.code === '42703') {
-        console.log("Intentando insertar sin user_id");
-        delete paymentData.user_id;
-        
-        const { data: retryData, error: retryError } = await supabase
+      console.log("Enviando formulario:", formData);
+      console.log("Usuario actual:", user);
+      
+      // Validar que el client_id no esté vacío
+      if (!formData.client_id) {
+        throw new Error("Debes seleccionar un cliente");
+      }
+      
+      // Validar que el amount sea un número válido
+      const amount = parseFloat(formData.amount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error("El monto debe ser un número positivo");
+      }
+      
+      // Validar que la fecha no esté vacía
+      if (!formData.due_date) {
+        throw new Error("La fecha de vencimiento es obligatoria");
+      }
+      
+      // Preparar los datos del pago
+      const paymentData: any = {
+        client_id: formData.client_id,
+        amount: amount,
+        description: formData.description,
+        due_date: formData.due_date,
+        status: formData.status,
+        payment_method: formData.payment_method || null
+      };
+      
+      // Verificar si necesitamos agregar el user_id
+      try {
+        const { data: userIdCheck } = await supabase
           .from('payments')
-          .insert([paymentData])
-          .select();
+          .select('user_id')
+          .limit(1);
+        
+        if (userIdCheck && userIdCheck.length > 0 && userIdCheck[0].user_id !== null) {
+          paymentData.user_id = user.id;
+        }
+      } catch {
+        console.warn("No se pudo verificar la columna user_id, intentando sin user_id");
+      }
+      
+      console.log("Datos a enviar:", paymentData);
+      
+      const { data, error } = await supabase
+        .from('payments')
+        .insert([paymentData])
+        .select();
+
+      if (error) {
+        console.error("Error al crear pago:", error);
+        
+        // Si el error es por la columna user_id, intentar sin ella
+        if (error.message.includes('user_id') || error.code === '42703') {
+          console.log("Intentando insertar sin user_id");
+          delete paymentData.user_id;
           
-        if (retryError) {
-          console.error("Error al crear pago sin user_id:", retryError);
-          throw retryError;
+          const { data: retryData, error: retryError } = await supabase
+            .from('payments')
+            .insert([paymentData])
+            .select();
+            
+          if (retryError) {
+            console.error("Error al crear pago sin user_id:", retryError);
+            throw retryError;
+          }
+          
+          console.log("Pago creado sin user_id:", retryData);
+          setSuccess(true);
+          setTimeout(() => {
+            router.push('/dashboard/payments');
+          }, 1500);
+          return;
         }
         
-        console.log("Pago creado sin user_id:", retryData);
-        setSuccess(true);
-        setTimeout(() => {
-          router.push('/dashboard/payments');
-        }, 1500);
-        return;
+        throw error;
       }
       
-      throw error;
+      console.log("Pago creado:", data);
+      
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/dashboard/payments');
+      }, 1500);
+    } catch (err: any) {
+      console.error('Error creating payment:', err);
+      setError(err.message || 'Error al crear el pago');
+    } finally {
+      setSaving(false);
     }
-    
-    console.log("Pago creado:", data);
-    
-    setSuccess(true);
-    setTimeout(() => {
-      router.push('/dashboard/payments');
-    }, 1500);
-  } catch (err: any) {
-    console.error('Error creating payment:', err);
-    setError(err.message || 'Error al crear el pago');
-  } finally {
-    setSaving(false);
-  }
-};
+  };
+
+  // Función para formatear el ID
+  const formatId = (id: string): string => {
+    return id.substring(0, 8) + '...';
+  };
 
   // Estados de carga
   if (!authChecked) {
@@ -298,7 +285,7 @@ export default function CreatePaymentPage() {
             >
               <option value="">Selecciona un cliente</option>
               {clients.map((client) => (
-                <option key={client.id} value={client.id}>
+                <option key={formatId(client.id)} value={client.id}>
                   {client.name}
                 </option>
               ))}

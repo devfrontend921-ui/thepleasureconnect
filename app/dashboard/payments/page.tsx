@@ -4,6 +4,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { User, Client, Payment } from '@/types';
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,9 +13,9 @@ const supabase = createBrowserClient(
 
 export default function PaymentsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -41,7 +42,12 @@ export default function PaymentsPage() {
         }
         
         console.log("Usuario autenticado:", user);
-        setUser(user);
+        // Map Supabase user to local User type
+        setUser({
+          id: user.id,
+          email: user.email ?? '', // fallback to empty string if undefined
+          // Add other fields as required by your local User type
+        });
         setAuthChecked(true);
         
         // Cargar datos iniciales
@@ -221,13 +227,12 @@ export default function PaymentsPage() {
   };
 
   // Función para formatear el ID
-  const formatId = (id: any) => {
-    const idString = String(id);
-    return idString.substring(0, 8) + '...';
+  const formatId = (id: string): string => {
+    return id.substring(0, 8) + '...';
   };
 
   // Función para obtener el nombre del cliente
-  const getClientName = (payment: any) => {
+  const getClientName = (payment: Payment): string => {
     if (payment.client && payment.client.name) {
       return payment.client.name;
     }

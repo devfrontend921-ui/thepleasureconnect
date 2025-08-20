@@ -228,7 +228,7 @@ export default function PaymentsPage() {
 
   // Función para formatear el ID
   const formatId = (id: string): string => {
-    return id.substring(0, 8) + '...';
+    return id;
   };
 
   // Función para obtener el nombre del cliente

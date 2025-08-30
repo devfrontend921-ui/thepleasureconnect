@@ -238,7 +238,7 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard de Pagos</h1>
+        <h1 className="text-2xl font-bold text-gray-900 desktop-only">Dashboard de Pagos</h1>
         <div className="flex space-x-2">
           <Link href="/dashboard/payments">
             <Button>Ver Pagos</Button>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Selector de mes */}
-      <div className="mb-6 flex items-center space-x-4">
+      <div className="mb-6 flex items-center space-x-4 justify-center gap-4 flex-wrap">
         <label htmlFor="month" className="text-sm font-medium text-gray-700">
           Mes:
         </label>

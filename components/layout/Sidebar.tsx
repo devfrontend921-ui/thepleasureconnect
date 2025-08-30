@@ -20,7 +20,7 @@ export default function Sidebar() {
   return (
     <div className="fixed lg:inset-y-0 lg:flex w-full md:w-auto lg:w-64 lg:flex-col top-[68px] md:top-0">
       <div className="flex min-h-0 flex-1 lg:flex-col border-r border-gray-200 bg-white">
-        <div className="flex h-16 flex-shrink-0 items-center px-4">
+        <div className="flex h-16 flex-shrink-0 items-center px-4 desktop-only">
           <h1 className="text-xl font-bold text-gray-900">Control de Pagos</h1>
         </div>
         <div className="flex flex-1 lg:flex-col overflow-y-auto lg:pt-5 lg:pb-4">

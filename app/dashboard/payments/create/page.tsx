@@ -204,7 +204,7 @@ export default function CreatePaymentPage() {
 
   // Función para formatear el ID
   const formatId = (id: string): string => {
-    return id.substring(0, 8) + '...';
+    return id;
   };
 
   // Estados de carga
